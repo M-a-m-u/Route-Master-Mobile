@@ -1,34 +1,45 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">    
+
 <meta charset="UTF-8">
 <title>Routen Builder</title>
 
 <style>
 body {
     font-family: Arial;
-    padding: 20px;
+    padding: 10px;
     background: #f4f4f4;
+    font-size: 16px;
 }
 
 input {
     width: 100%;
-    padding: 10px;
-    margin-top: 5px;
+    padding: 12px;
+    margin-top: 8px;
+    font-size: 16px;
 }
 
 button {
-    padding: 10px 15px;
+    width: 100%;
+    padding: 14px;
     margin-top: 10px;
-    margin-right: 5px;
+    font-size: 16px;
+    border-radius: 8px;
 }
 
 .block {
     background: white;
     padding: 15px;
     margin-top: 15px;
-    border-radius: 10px;
+    border-radius: 12px;
+}
+
+/* Vorschlagsliste */
+.feld div {
+    font-size: 16px;
 }
 </style>
 
@@ -47,8 +58,10 @@ button {
 
 <div id="ziele"></div>
 
-<button onclick="addZiel()">+ Adresse hinzufügen</button>
-<button onclick="saveAbschnitt()">Abschnitt speichern</button>
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button onclick="addZiel()">+ Adresse</button>
+    <button onclick="saveAbschnitt()">Speichern</button>
+</div>
 
 </div>
 
