@@ -1,1 +1,286 @@
 
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Routen Builder</title>
+
+<style>
+body {
+    font-family: Arial;
+    padding: 20px;
+    background: #f4f4f4;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+}
+
+button {
+    padding: 10px 15px;
+    margin-top: 10px;
+    margin-right: 5px;
+}
+
+.block {
+    background: white;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 10px;
+}
+</style>
+
+</head>
+<body>
+
+<h2>Routen Builder</h2>
+
+<div class="block">
+
+<label>Startadresse</label>
+<div class="feld">
+<input id="start" placeholder="Start eingeben">
+<div id="start_vorschlaege"></div>
+</div>
+
+<div id="ziele"></div>
+
+<button onclick="addZiel()">+ Adresse hinzufügen</button>
+<button onclick="saveAbschnitt()">Abschnitt speichern</button>
+
+</div>
+
+<h3>Gespeicherte Abschnitte</h3>
+<div id="liste"></div>
+<button onclick="exportRouten()">💾 Routen speichern</button>
+
+<script>
+
+let alleRouten = [];    
+
+ let strassen = [];
+
+fetch("duesseldorf_strassen.json")
+.then(res => res.json())
+.then(data => {
+    strassen = data;
+});   
+
+let letzterPunkt = null;
+let abschnittNummer = 1;
+
+function formatAdresse(text) {
+    if(!text) return "";
+
+    text = text.trim();
+
+    // wenn schon Straße + Hausnummer drin → nur Stadt ergänzen
+    if(!text.includes("Düsseldorf")) {
+        text += " Düsseldorf";
+    }
+
+    return text;
+}
+
+function encodeAdresse(text) {
+    return text.replace(/\s+/g, "+");
+}
+
+function addZiel() {
+
+    let wrapper = document.createElement("div");
+wrapper.className = "feld";
+
+let input = document.createElement("input");
+let box = document.createElement("div");
+
+wrapper.appendChild(input);
+wrapper.appendChild(box);
+
+document.getElementById("ziele").appendChild(wrapper);
+
+input.addEventListener("input", function(){
+    sucheStrasse(input, box);
+});
+    input.placeholder = "Adresse eingeben";
+
+    document.getElementById("ziele").appendChild(input);
+}
+
+function saveAbschnitt() {
+
+    let start = document.getElementById("start").value.trim();
+
+    let inputs = document.querySelectorAll("#ziele input");
+
+    if(start === "" || inputs.length === 0) {
+        alert("Start + mindestens 1 Ziel nötig!");
+        return;
+    }
+
+    let ziele = [];
+
+    inputs.forEach(i => {
+        if(i.value.trim() !== "") {
+            ziele.push(i.value.trim());
+        }
+    });
+
+    if(ziele.length === 0) {
+        alert("Keine gültigen Ziele!");
+        return;
+    }
+
+    let ziel = ziele[ziele.length - 1];
+
+    // 👉 sauber formatieren
+    let startClean = formatAdresse(start);
+    let zieleClean = ziele.map(z => formatAdresse(z));
+
+    // 👉 Google Link bauen
+    let route = [startClean, ...zieleClean];
+
+    let url = "https://www.google.com/maps/dir/" +
+        route.map(r => encodeAdresse(r)).join("/");
+
+    alleRouten.push({
+    name: "Abschnitt " + abschnittNummer,
+    start: startClean,
+    ziele: zieleClean,
+    link: url
+});    
+
+
+    // 👉 letzter Punkt speichern
+    letzterPunkt = ziel;
+
+    // 👉 Anzeige erstellen
+    let div = document.createElement("div");
+    div.className = "block";
+
+    let html = "<b>Abschnitt " + abschnittNummer + "</b><br>";
+
+    html += "<div style='margin-top:5px;'>";
+
+    route.forEach((r, index) => {
+        if(index === 0) {
+            html += "Start: " + r + "<br>";
+        } else {
+            html += "→ " + r + "<br>";
+        }
+    });
+
+    html += "</div>";
+
+    html += "<br><a href='" + url + "' target='_blank'>🔗 Route starten</a>";
+
+    div.innerHTML = html;
+
+    document.getElementById("liste").appendChild(div);
+
+    abschnittNummer++;
+
+    // Felder leeren
+    document.getElementById("ziele").innerHTML = "";
+
+    // 👉 automatischer Start
+    document.getElementById("start").value = letzterPunkt;
+
+    autoSpeichern();
+}
+
+function sucheStrasse(input, box){
+
+    let raw = input.value.toLowerCase();
+
+// Hausnummer entfernen für die Suche
+let wert = raw.replace(/\d+\w*/g, "").trim();
+
+    box.innerHTML = "";
+
+    if(wert.length < 2) return;
+
+    let treffer = strassen.filter(s =>
+        s.name.toLowerCase().includes(wert)
+    ).slice(0,5);
+
+    treffer.forEach(s => {
+
+        let div = document.createElement("div");
+        div.style.padding = "5px";
+        div.style.cursor = "pointer";
+        div.style.background = "#eee";
+        div.style.marginTop = "2px";
+
+        div.innerText = s.name;
+
+        div.onclick = () => {
+
+            let hausnrMatch = input.value.match(/\d+\w*/);
+            let hausnr = hausnrMatch ? hausnrMatch[0] : "";
+
+            input.value = s.name + (hausnr ? " " + hausnr : "");
+
+            box.innerHTML = "";
+        };
+
+        box.appendChild(div);
+    });
+}
+
+document.getElementById("start").addEventListener("input", function(){
+    sucheStrasse(this, document.getElementById("start_vorschlaege"));
+});
+
+function exportRouten(){
+
+    if(alleRouten.length === 0){
+        alert("Keine Routen vorhanden!");
+        return;
+    }
+
+    let daten = JSON.stringify(alleRouten, null, 2);
+
+    let blob = new Blob([daten], {type: "application/json"});
+
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    let name = prompt("Name der Route? (z.B. 05)");
+
+    if(!name) name = "route";
+
+    a.download = "route_" + name + ".json";
+
+    a.click();
+}
+
+function autoSpeichern(){
+
+    let daten = {
+        html: document.getElementById("liste").innerHTML,
+        start: document.getElementById("start").value
+    };
+
+    localStorage.setItem("ROUTEN_BUILDER", JSON.stringify(daten));
+}
+
+window.onload = function(){
+
+    let daten = localStorage.getItem("ROUTEN_BUILDER");
+
+    if(daten){
+
+        let obj = JSON.parse(daten);
+
+        document.getElementById("liste").innerHTML = obj.html;
+
+        document.getElementById("start").value = obj.start;
+    }
+};
+
+</script>
+
+</body>
+</html>
