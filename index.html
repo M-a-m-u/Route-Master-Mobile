@@ -5,179 +5,274 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Route-Master 2026</title>
-
+    <title>Route-Master V7</title>
     <link rel="apple-touch-icon" href="icon.png">
 
-    <style>
-        :root { 
-            --bg: #0f172a; --card: #1e293b; --text: #f8fafc; 
-            --primary: #3b82f6; --accent: #8b5cf6; --success: #22c55e; 
+    <style id="theme-style">
+        /* Standard-Variablen (werden per JS überschrieben) */
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
         }
-        
+
+        /* Nacht-Modus CSS Klassen (werden per JS aktiviert) */
+        body.dark-mode {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --border: #334155;
+            --primary: #3b82f6;
+            --secondary: #475569;
+        }
+
         body { 
             font-family: -apple-system, system-ui, sans-serif; 
-            background: var(--bg); color: var(--text); 
-            margin: 0; padding: env(safe-area-inset-top) 15px 40px 15px;
-            line-height: 1.5;
+            padding: env(safe-area-inset-top) 15px 40px 15px; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0;
+            transition: background 0.5s, color 0.5s;
         }
 
-        h1 { 
-            font-size: 1.5rem; text-align: center; color: var(--primary); 
-            margin: 20px 0; letter-spacing: 1px; text-transform: uppercase;
-        }
-
-        .container { max-width: 800px; margin: 0 auto; }
-
+        .container { max-width: 1000px; margin: 0 auto; }
         .card { 
-            background: var(--card); padding: 20px; border-radius: 20px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #334155; 
+            background: var(--card); 
+            padding: 15px; 
+            border-radius: 16px; 
             margin-bottom: 20px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            border: 1px solid var(--border); 
         }
 
-        label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #94a3b8; font-weight: bold; }
+        .status-bar { 
+            background: #dcfce7; color: #166534; 
+            padding: 12px; border-radius: 10px; margin-bottom: 15px; 
+            font-size: 0.9rem; display: none; text-align: center;
+        }
+        body.dark-mode .status-bar { background: #064e3b; color: #ecfdf5; }
 
-        input, select, textarea { 
-            width: 100%; padding: 14px; border-radius: 12px; background: #334155; 
-            color: white; border: 1px solid #475569; font-size: 1rem; 
-            margin-bottom: 15px; box-sizing: border-box;
+        h1 { color: var(--primary); margin: 20px 0; text-align: center; font-size: 1.6rem; }
+        h3 { margin-top: 0; font-size: 1rem; color: var(--primary); }
+
+        textarea { 
+            width: 100%; height: 120px; border: 1px solid var(--border); 
+            border-radius: 10px; padding: 12px; font-family: monospace; 
+            box-sizing: border-box; background: var(--bg); color: var(--text);
         }
 
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .controls { display: flex; gap: 10px; align-items: center; margin: 15px 0; flex-wrap: wrap; }
+        input { 
+            padding: 12px; border: 1px solid var(--border); border-radius: 10px; 
+            background: var(--bg); color: var(--text); flex-grow: 1;
+        }
+
+        button { padding: 12px 18px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-sec { background: var(--secondary); color: white; }
+        .btn-save { background: var(--success); color: white; width: 100%; font-size: 1.1rem; margin-top: 10px; padding: 18px; border-radius: 14px; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-mini { padding: 6px 10px; font-size: 0.75rem; border-radius: 6px; }
         
-        button { 
-            background: var(--primary); color: white; border: none; 
-            padding: 16px; border-radius: 14px; font-size: 1rem; font-weight: bold;
-            cursor: pointer; transition: transform 0.1s, opacity 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        button:active { transform: scale(0.98); opacity: 0.9; }
-        .btn-secondary { background: #475569; }
-        .btn-success { background: var(--success); grid-column: span 2; margin-top: 10px; }
-
-        #output { 
-            background: #020617; color: #10b981; font-family: monospace; 
-            font-size: 0.85rem; padding: 15px; border-radius: 12px; 
-            max-height: 300px; overflow-y: auto; white-space: pre-wrap;
-            border: 1px solid #1e293b;
-        }
-
-        /* PC-Optimierung */
-        @media (min-width: 768px) {
-            h1 { font-size: 2rem; margin: 40px 0; }
-            .card { padding: 30px; }
-            button:hover { filter: brightness(1.2); }
-        }
+        .route-block { border: 1px solid var(--border); border-radius: 14px; margin-top: 20px; background: var(--card); overflow: hidden; }
+        .route-header { background: var(--border); padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; opacity: 0.9; }
+        
+        .segment-row { border-bottom: 1px solid var(--border); }
+        .segment-main { display: flex; align-items: center; gap: 10px; padding: 15px; cursor: pointer; flex-wrap: wrap; }
+        .segment-main:hover { background: var(--border); opacity: 0.8; }
+        
+        .segment-details { display: none; background: var(--bg); padding: 10px 15px; border-top: 1px inset var(--border); }
+        .stop-item { font-size: 0.85rem; display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: center; }
+        
+        .counter-badge { background: var(--primary); color: white; border-radius: 6px; padding: 4px 10px; font-size: 0.85rem; font-weight: bold; }
     </style>
 </head>
-<body>
+<body id="mainBody">
 
-    <div class="container">
-        <h1>🛠 Route-Master 2026</h1>
+<div class="container">
+    <h1 id="titleHeader">🛠 ROUTE-MASTER V7</h1>
+    <div id="saveStatus" class="status-bar"></div>
 
-        <div class="card">
-            <label>TomTom ITN Datei einlesen:</label>
-            <input type="file" id="itnInput" accept=".itn">
-            <div class="btn-group">
-                <button onclick="processITN()">ITN KONVERTIEREN</button>
-                <button class="btn-secondary" onclick="clearAll()">LÖSCHEN</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <label>Tour Nummer (z.B. 05):</label>
-            <input type="text" id="tourId" placeholder="z.B. 03">
-            
-            <label>Stadtteil / Name:</label>
-            <input type="text" id="tourName" placeholder="z.B. Derendorf">
-            
-            <label>Abschnitts-Bezeichnung:</label>
-            <input type="text" id="segName" placeholder="z.B. 03-01">
-        </div>
-
-        <div class="card">
-            <label>Vorschau JSON-Daten:</label>
-            <div id="output">Noch keine Daten verarbeitet...</div>
-            
-            <button class="btn-success" onclick="downloadJSON()">
-                💾 JSON DATEI SPEICHERN
-            </button>
+    <div class="card">
+        <h3>1. Projekt / Backup laden</h3>
+        <div class="controls">
+            <input type="file" id="fileInput" accept=".json">
+            <button class="btn-sec" onclick="loadProjectFile()">JSON einlesen</button>
+            <button class="btn-danger" onclick="clearLocalStorage()">Reset</button>
         </div>
     </div>
 
+    <div class="card">
+        <h3>2. ITN Import</h3>
+        <textarea id="itnInput" placeholder="ITN-Daten einfügen..."></textarea>
+        <div class="controls">
+            <input type="text" id="mainRouteName" placeholder="Name">
+            <input type="text" id="routePrefix" placeholder="ID" style="width: 50px;">
+            <button class="btn-primary" onclick="importITN()">Hinzufügen</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>3. Editor & Kontrolle</h3>
+        <div id="editorArea"></div>
+        <button class="btn-save" id="saveBtn" style="display:none;" onclick="downloadJSON()">Gesamt-JSON speichern</button>
+    </div>
+</div>
+
 <script>
-    let currentStops = [];
+    // --- ZEIT-STEUERUNG ---
+    function updateTheme() {
+        const hour = new Date().getHours();
+        const body = document.getElementById('mainBody');
+        const header = document.getElementById('titleHeader');
+        
+        // Nachtmodus zwischen 18:00 und 07:00
+        if (hour >= 20 || hour < 7) {
+            body.classList.add('dark-mode');
+            header.innerText = "🌙 ROUTE-MASTER V7 (Nacht)";
+        } else {
+            body.classList.remove('dark-mode');
+            header.innerText = "☀️ ROUTE-MASTER V7 (Tag)";
+        }
+    }
 
-    function processITN() {
-        const file = document.getElementById('itnInput').files[0];
-        if (!file) return alert("Bitte erst eine .itn Datei wählen!");
+    // --- DEINE ORIGINAL-LOGIK ---
+    let projectData = { touren: [] };
+    const STORAGE_KEY = 'route_master_v4_data';
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const lines = e.target.result.split('\n');
-            currentStops = [];
+    window.onload = () => {
+        updateTheme(); // Zeit-Check beim Laden
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            projectData = JSON.parse(saved);
+            renderEditor();
+        }
+    };
+
+    function saveToLocalStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(projectData));
+        showStatus("Gespeichert um " + new Date().toLocaleTimeString());
+    }
+
+    function showStatus(msg) {
+        const s = document.getElementById('saveStatus');
+        s.innerText = msg; s.style.display = 'block';
+        setTimeout(() => { s.style.display = 'none'; }, 2000);
+    }
+
+    function importITN() {
+        const input = document.getElementById('itnInput').value.trim();
+        const name = document.getElementById('mainRouteName').value || "Neue Route";
+        const prefix = document.getElementById('routePrefix').value || "00";
+        if(!input) return;
+
+        const lines = input.split(/\r?\n/).filter(l => l.trim() !== "");
+        let points = [];
+        lines.forEach(line => {
+            const parts = line.split('|');
+            if(parts.length >= 3) {
+                points.push({ 
+                    lat: parseFloat(parts[1]) / 100000, 
+                    lng: parseFloat(parts[0]) / 100000, 
+                    name: parts[2].trim() 
+                });
+            }
+        });
+
+        let tour = projectData.touren.find(t => t.id === prefix);
+        if (!tour) { tour = { name: name, id: prefix, abschnitte: [] }; projectData.touren.push(tour); }
+
+        let startCount = tour.abschnitte.length;
+        for (let i = 0; i < points.length; i += 10) {
+            let chunk = points.slice(i, i + 10);
+            let sectionLabel = prefix + " - " + String(startCount + Math.floor(i/10) + 1).padStart(2, '0');
+            tour.abschnitte.push({ bezeichnung: sectionLabel, stopps: chunk });
+        }
+        document.getElementById('itnInput').value = "";
+        saveToLocalStorage();
+        renderEditor();
+    }
+
+    function renderEditor() {
+        const area = document.getElementById('editorArea');
+        const saveBtn = document.getElementById('saveBtn');
+        area.innerHTML = "";
+        if(projectData.touren.length > 0) saveBtn.style.display = "block";
+
+        projectData.touren.sort((a,b) => a.id.localeCompare(b.id)).forEach((tour, tIdx) => {
+            let tourDiv = document.createElement('div');
+            tourDiv.className = 'route-block';
+            tourDiv.innerHTML = `<div class="route-header"><span>Route ${tour.id}: ${tour.name}</span><button class="btn-danger btn-mini" onclick="deleteTour(${tIdx})">Löschen</button></div>`;
             
-            lines.forEach(line => {
-                if (line.includes('|')) {
-                    const parts = line.split('|');
-                    if (parts.length >= 3) {
-                        // ITN Format: Longitude|Latitude|Name|Flag
-                        // Wir brauchen Lat/Lng als Dezimalzahl
-                        const lng = (parseInt(parts[0]) / 100000).toFixed(5);
-                        const lat = (parseInt(parts[1]) / 100000).toFixed(5);
-                        const name = parts[2].trim();
-                        currentStops.push({ lat, lng, name });
-                    }
-                }
-            });
+            tour.abschnitte.forEach((abs, aIdx) => {
+                let segDiv = document.createElement('div');
+                segDiv.className = 'segment-row';
+                let stopsHtml = abs.stopps.map((s, sIdx) => `
+                    <div class="stop-item">
+                        <span>${sIdx+1}. ${s.name} <br><small>${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}</small></span>
+                        <button class="btn-danger btn-mini" onclick="deleteStop(${tIdx}, ${aIdx}, ${sIdx}); event.stopPropagation();">X</button>
+                    </div>
+                `).join('');
 
-            updatePreview();
-        };
+                segDiv.innerHTML = `
+                    <div class="segment-main" onclick="toggleDetails(${tIdx}, ${aIdx})">
+                        <div class="counter-badge">${abs.bezeichnung}</div>
+                        <div style="flex-grow:1; font-weight:bold;">${abs.stopps.length} Stopps</div>
+                        <button class="btn-primary btn-mini" onclick="openInMaps(${tIdx}, ${aIdx}); event.stopPropagation();">📍 Maps</button>
+                        <button class="btn-danger btn-mini" onclick="deleteSegment(${tIdx}, ${aIdx}); event.stopPropagation();">Löschen</button>
+                    </div>
+                    <div class="segment-details" id="details-${tIdx}-${aIdx}">
+                        ${stopsHtml}
+                    </div>
+                `;
+                tourDiv.appendChild(segDiv);
+            });
+            area.appendChild(tourDiv);
+        });
+    }
+
+    function toggleDetails(tIdx, aIdx) {
+        const el = document.getElementById(`details-${tIdx}-${aIdx}`);
+        el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function openInMaps(tIdx, aIdx) {
+        const points = projectData.touren[tIdx].abschnitte[aIdx].stopps;
+        const dest = `${points[points.length-1].lat},${points[points.length-1].lng}`;
+        const ways = points.slice(0, -1).map(p => `${p.lat},${p.lng}`).join('|');
+        window.open(`comgooglemaps://?saddr=&daddr=${dest}&waypoints=${ways}&directionsmode=driving`, '_blank');
+    }
+
+    function deleteStop(tIdx, aIdx, sIdx) {
+        projectData.touren[tIdx].abschnitte[aIdx].stopps.splice(sIdx, 1);
+        saveToLocalStorage(); renderEditor();
+        document.getElementById(`details-${tIdx}-${aIdx}`).style.display = 'block';
+    }
+
+    function deleteTour(tIdx) { if(confirm("Löschen?")) { projectData.touren.splice(tIdx, 1); saveToLocalStorage(); renderEditor(); } }
+    function deleteSegment(tIdx, aIdx) { projectData.touren[tIdx].abschnitte.splice(aIdx, 1); saveToLocalStorage(); renderEditor(); }
+    function clearLocalStorage() { if(confirm("Alles löschen?")) { localStorage.clear(); projectData={touren:[]}; renderEditor(); } }
+    
+    function loadProjectFile() {
+        const file = document.getElementById('fileInput').files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => { projectData = JSON.parse(e.target.result); saveToLocalStorage(); renderEditor(); };
         reader.readAsText(file);
     }
-
-    function updatePreview() {
-        const tourId = document.getElementById('tourId').value || "XX";
-        const tourName = document.getElementById('tourName').value || "Unbekannt";
-        const segName = document.getElementById('segName').value || "Abschnitt 1";
-
-        const result = {
-            touren: [{
-                id: tourId,
-                name: tourName,
-                abschnitte: [{
-                    bezeichnung: segName,
-                    stopps: currentStops
-                }]
-            }]
-        };
-
-        document.getElementById('output').innerText = JSON.stringify(result, null, 2);
-    }
-
+    
     function downloadJSON() {
-        const jsonStr = document.getElementById('output').innerText;
-        if (currentStops.length === 0) return alert("Keine Daten zum Speichern vorhanden!");
-        
-        const blob = new Blob([jsonStr], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `route_${document.getElementById('tourId').value || 'export'}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-
-    function clearAll() {
-        if(confirm("Alle Eingaben löschen?")) {
-            document.getElementById('itnInput').value = "";
-            document.getElementById('tourId').value = "";
-            document.getElementById('tourName').value = "";
-            document.getElementById('segName').value = "";
-            document.getElementById('output').innerText = "Noch keine Daten...";
-            currentStops = [];
-        }
+        const data = JSON.stringify(projectData, null, 2);
+        const blob = new Blob([data], {type: "application/json"});
+        const dl = document.createElement('a');
+        dl.href = URL.createObjectURL(blob);
+        dl.download = "beleuchtungskontrolle_master.json";
+        dl.click();
     }
 </script>
 </body>
