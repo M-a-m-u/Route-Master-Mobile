@@ -2,103 +2,82 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route-Master V14.2 (Real-Road)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Route-Master Pro</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --primary: #2563eb; --secondary: #64748b; --success: #22c55e; --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --border: #e2e8f0; }
-        body.dark-mode { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --border: #334155; --primary: #3b82f6; }
-        body { font-family: -apple-system, system-ui, sans-serif; padding: 20px; background: var(--bg); color: var(--text); margin: 0; }
-        .container { max-width: 1100px; margin: 0 auto; }
-        .card { background: var(--card); padding: 20px; border-radius: 16px; margin-bottom: 20px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h1 { color: var(--primary); text-align: center; margin-top: 0; }
-        .controls { display: flex; gap: 10px; align-items: center; margin: 15px 0; flex-wrap: wrap; }
-        input, select { padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); }
-        button { padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; transition: all 0.2s; }
+        body { font-family: -apple-system, system-ui, sans-serif; padding: 15px; background: var(--bg); color: var(--text); margin: 0; padding-top: env(safe-area-inset-top); }
+        .card { background: var(--card); padding: 15px; border-radius: 16px; margin-bottom: 15px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h1 { color: var(--primary); text-align: center; margin-top: 10px; font-size: 1.2rem; }
+        .controls { display: flex; gap: 8px; margin: 10px 0; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
+        button { padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; white-space: nowrap; font-size: 0.85rem; flex-shrink: 0; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-save { background: var(--success); color: white; width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 10px; }
+        .btn-save { background: var(--success); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 10px; border-radius: 12px; }
         .btn-danger { background: var(--danger); color: white; }
         .route-block { border: 1px solid var(--border); border-radius: 14px; margin-top: 15px; background: var(--card); overflow: hidden; }
-        .route-header { background: var(--border); padding: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-        .segment-row { border-bottom: 1px solid var(--border); transition: background 0.2s; }
+        .route-header { background: var(--border); padding: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.85rem; }
+        .segment-row { border-bottom: 1px solid var(--border); }
         .segment-main { padding: 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-        .segment-main:hover { background: rgba(0,0,0,0.05); }
-        .segment-details { display: none; background: var(--bg); padding: 10px; border-top: 1px inset var(--border); }
-        .stop-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-        .counter-badge { background: var(--primary); color: white; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; min-width: 55px; text-align: center; }
-        #mapModal { display: none; position: fixed; top: 5%; left: 5%; width: 90%; height: 90%; background: var(--card); z-index: 10000; border-radius: 20px; border: 2px solid var(--primary); }
+        .segment-details { display: none; background: #f8fafc; padding: 10px; border-top: 1px inset var(--border); }
+        .stop-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e2e8f0; font-size: 0.8rem; }
+        .counter-badge { background: var(--primary); color: white; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; }
+        #mapModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--card); z-index: 10000; }
         #mapContainer { width: 100%; height: calc(100% - 60px); }
-        .modal-header { padding: 15px; display: flex; justify-content: space-between; background: var(--primary); color: white; border-radius: 18px 18px 0 0; }
-        #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; }
+        .modal-header { padding: 15px; display: flex; justify-content: space-between; background: var(--primary); color: white; align-items: center; padding-top: env(safe-area-inset-top); }
     </style>
 </head>
-<body id="mainBody">
+<body>
 
-<div id="modalOverlay" onclick="closeMap()"></div>
+<div id="modalOverlay" onclick="closeMap()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999;"></div>
 <div id="mapModal">
-    <div class="modal-header"><span id="modalTitle">Vorschau</span><button onclick="closeMap()" style="background:white; color:black; padding:5px;">X</button></div>
+    <div class="modal-header">
+        <span id="modalTitle" style="font-weight:bold;">Vorschau</span>
+        <button onclick="closeMap()" style="background:white; color:black; padding:5px 12px; border-radius:8px;">X</button>
+    </div>
     <div id="mapContainer"></div>
 </div>
 
 <div class="container">
-    <h1>🛠 ROUTE-MASTER V14.2 (REAL-ROAD)</h1>
+    <h1>🛠 ROUTE-MASTER PRO</h1>
     <div class="card">
-        <h3>1. Projekt & ITN Import</h3>
         <div class="controls">
-            <input type="file" id="fileInput" accept=".json,.itn">
-            <button class="btn-primary" onclick="handleFileSelect()">Datei einlesen</button>
-            <button class="btn-danger" onclick="safeReset()">Reset</button>
-            <button class="btn-primary" style="background:#facc15; color:#000;" onclick="toggleNotes()">📝 Notizbuch</button>
-
+            <input type="file" id="fileInput" accept=".json,.itn" style="display:none;" onchange="handleFileSelect()">
+            <button class="btn-primary" onclick="document.getElementById('fileInput').click()">📁 JSON/ITN</button>
+            <button class="btn-primary" style="background:#facc15; color:#000;" onclick="toggleNotes()">📝 Notizen</button>
+            <button class="btn-danger" onclick="safeReset()">🔄 Reset</button>
         </div>
         <div id="itnSettings" style="display:none; border-top:1px solid var(--border); margin-top:10px; padding-top:10px;">
             <div class="controls">
-
-            <select id="importMode" onchange="toggleImportMode()">
-        <option value="new">➕ Neue Route / Anhängen</option>
-        <option value="replace">🔄 Abschnitt ersetzen</option>
-        </select>
-    
-        <span id="groupNew">
-        <input type="text" id="mainRouteName" placeholder="Routen-Name">
-        <input type="text" id="routePrefix" placeholder="ID" style="width: 60px;">
-        <select id="splitCount">
-            <option value="999">Alles ein Abschnitt</option>
-            <option value="10">Split alle 10</option>
-            <option value="25">Split alle 25</option>
-            <option value="50">Split alle 50</option>
-        </select>
-    </span>
-
-    <span id="groupReplace" style="display:none;">
-        <select id="targetSelect">
-            <option value="">-- Ziel-Abschnitt wählen --</option>
-        </select>
-    </span>
-
-    <button class="btn-primary" style="background:#22c55e;" onclick="processITNData()">Importieren</button>
-
-                
+                <select id="importMode" onchange="toggleImportMode()">
+                    <option value="new">➕ Neu</option>
+                    <option value="replace">🔄 Ersetzen</option>
+                </select>
+                <span id="groupNew">
+                    <input type="text" id="routePrefix" placeholder="ID" style="width: 40px; padding:8px;">
+                    <select id="splitCount"><option value="999">Alle</option><option value="25">25</option></select>
+                </span>
+                <span id="groupReplace" style="display:none;"><select id="targetSelect" style="max-width:100px;"></select></span>
+                <button class="btn-primary" style="background:#22c55e;" onclick="processITNData()">OK</button>
             </div>
         </div>
     </div>
-    <div class="card">
-        <div id="noteBox" style="display:none; margin-bottom: 20px;">
-        <textarea id="userNotes" oninput="saveNotesLocal()" style="width: 100%; height: 120px; padding: 12px; border-radius: 12px; border: 2px solid #facc15; background: var(--card); color: var(--text); font-family: inherit;" placeholder="Hier kannst du deine Notizen zur Tour eintragen..."></textarea>
-    
-        </div>
 
-        <div id="editorArea"></div>
-        <button class="btn-save" id="saveBtn" onclick="prepareAndDownload()">💾 MASTER-JSON (OFFLINE) SPEICHERN</button>
-        <p id="statusMsg" style="text-align:center; font-weight:bold; color:var(--primary);"></p>
+    <div id="noteBox" class="card" style="display:none;">
+        <textarea id="userNotes" oninput="saveNotesLocal()" style="width: 100%; height: 100px; padding: 10px; border-radius: 10px; border: 2px solid #facc15; background: #fff; font-family: inherit; box-sizing: border-box;" placeholder="Notizen..."></textarea>
     </div>
+
+    <div id="editorArea"></div>
+    <button class="btn-save" id="saveBtn" onclick="prepareAndDownload()">💾 MASTER-JSON SPEICHERN</button>
+    <p id="statusMsg" style="text-align:center; font-size: 0.8rem; font-weight:bold; color:var(--primary);"></p>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    let projectData = { touren: [] };
-    let previewMap;
-    let pendingITN = null;
+    let projectData = { touren: [] }, previewMap, pendingITN = null;
 
     function handleFileSelect() {
         const file = document.getElementById('fileInput').files[0];
@@ -106,129 +85,64 @@
         const reader = new FileReader();
         reader.onload = (e) => {
             if (file.name.endsWith('.json')) { projectData = JSON.parse(e.target.result); renderEditor(); }
-            else { pendingITN = e.target.result; document.getElementById('itnSettings').style.display = 'block'; document.getElementById('mainRouteName').value = file.name.replace('.itn',''); }
+            else { pendingITN = e.target.result; document.getElementById('itnSettings').style.display = 'block'; }
         };
         reader.readAsText(file);
     }
 
-        function toggleImportMode() {
+    function toggleImportMode() {
         const mode = document.getElementById('importMode').value;
-        // Zeigt die Felder für "Neu" nur an, wenn "new" gewählt ist
         document.getElementById('groupNew').style.display = (mode === 'new') ? 'inline' : 'none';
-        // Zeigt die Liste für "Ersetzen" nur an, wenn "replace" gewählt ist
         document.getElementById('groupReplace').style.display = (mode === 'replace') ? 'inline' : 'none';
-
-        // Wenn wir ersetzen wollen, füllen wir jetzt die Liste mit deinen aktuellen Abschnitten
         if (mode === 'replace') {
             const sel = document.getElementById('targetSelect');
-            sel.innerHTML = '<option value="">-- Ziel-Abschnitt wählen --</option>';
-            
-            projectData.touren.forEach((t, tIdx) => {
-                t.abschnitte.forEach((abs, aIdx) => {
-                    const opt = document.createElement('option');
-                    // Wir merken uns die Position (Tour-Index und Abschnitts-Index)
-                    opt.value = tIdx + "|" + aIdx;
-                    opt.textContent = abs.bezeichnung + " (" + t.name + ")";
-                    sel.appendChild(opt);
-                });
-            });
+            sel.innerHTML = '<option value="">Ziel...</option>';
+            projectData.touren.forEach((t, tIdx) => t.abschnitte.forEach((abs, aIdx) => {
+                const opt = document.createElement('option'); opt.value = tIdx + "|" + aIdx; opt.textContent = abs.bezeichnung; sel.appendChild(opt);
+            }));
         }
     }
 
-        function processITNData() {
+    function processITNData() {
         const mode = document.getElementById('importMode').value;
         const lines = pendingITN.split(/\r?\n/).filter(l => l.includes('|'));
-        const newPts = lines.map(l => { 
-            const p = l.split('|'); 
-            return { lat: parseFloat(p[1])/100000, lng: parseFloat(p[0])/100000, name: p[2].trim() }; 
-        });
-
+        const newPts = lines.map(l => { const p = l.split('|'); return { lat: parseFloat(p[1])/100000, lng: parseFloat(p[0])/100000, name: p[2].trim() }; });
         if (mode === 'replace') {
-            // MODUS: ERSETZEN
-            const target = document.getElementById('targetSelect').value;
-            if (!target) return alert("Bitte wähle zuerst einen Ziel-Abschnitt aus!");
-            
-            const indices = target.split('|');
-            const tIdx = parseInt(indices[0]);
-            const aIdx = parseInt(indices[1]);
-            
-            // Hier passiert der Austausch:
-            projectData.touren[tIdx].abschnitte[aIdx].stopps = newPts;
-            
-            // Ganz wichtig: Die alte Geometrie löschen, damit sie neu berechnet wird!
-            projectData.touren[tIdx].abschnitte[aIdx].geometry = null; 
-            
-            document.getElementById('statusMsg').innerText = "Abschnitt " + projectData.touren[tIdx].abschnitte[aIdx].bezeichnung + " erfolgreich aktualisiert!";
+            const t = document.getElementById('targetSelect').value.split('|');
+            projectData.touren[t[0]].abschnitte[t[1]].stopps = newPts;
+            projectData.touren[t[0]].abschnitte[t[1]].geometry = null; 
         } else {
-            // MODUS: NEUE ROUTE (Dein bekannter Standard-Modus)
-            const name = document.getElementById('mainRouteName').value || "Tour";
             const prefix = document.getElementById('routePrefix').value || "00";
             const split = parseInt(document.getElementById('splitCount').value);
-            
-            let tour = projectData.touren.find(t => t.id === prefix) || { name: name, id: prefix, abschnitte: [] };
+            let tour = projectData.touren.find(t => t.id === prefix) || { name: "Tour "+prefix, id: prefix, abschnitte: [] };
             if (!projectData.touren.includes(tour)) projectData.touren.push(tour);
-
             for (let i = 0; i < newPts.length; i += split) {
                 let chunk = newPts.slice(i, i + split);
                 if (i > 0) chunk.unshift(newPts[i-1]);
-                else if (tour.abschnitte.length > 0) chunk.unshift(tour.abschnitte[tour.abschnitte.length-1].stopps.slice(-1)[0]);
-                
                 tour.abschnitte.push({ bezeichnung: "", stopps: chunk, geometry: null });
             }
             reindexSegments(tour);
         }
-
-        // Editor neu zeichnen und Menü schließen
-        renderEditor();
-        document.getElementById('itnSettings').style.display = 'none';
+        renderEditor(); document.getElementById('itnSettings').style.display = 'none';
     }
-
 
     function reindexSegments(tour) { tour.abschnitte.forEach((abs, i) => abs.bezeichnung = tour.id + "-" + String(i + 1).padStart(2, '0')); }
 
-        function renderEditor() {
-        // 1. Numerische Sortierung (beibehalten)
-        projectData.touren.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }));
-
-        const area = document.getElementById('editorArea'); 
-        area.innerHTML = "";
-        
-        if(projectData.touren.length > 0) document.getElementById('saveBtn').style.display = "block";
-        
+    function renderEditor() {
+        projectData.touren.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+        const area = document.getElementById('editorArea'); area.innerHTML = "";
         projectData.touren.forEach((t, tIdx) => {
-            let div = document.createElement('div'); 
-            div.className = 'route-block';
-            
-            // NEU: Wir fügen einen Klick-Event direkt auf den Header hinzu (toggleTour)
-            // Und wir geben dem Inhalts-Container (segs-tIdx) initial display:none
-            div.innerHTML = `
-                <div class="route-header" onclick="toggleTour(${tIdx})" style="cursor:pointer;">
-                    <span>Route ${t.id}: ${t.name}</span>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <span style="font-size:0.8rem; opacity:0.7;">${t.abschnitte.length} Abschnitte</span>
-                        <button class="btn-danger" onclick="event.stopPropagation(); deleteTour(${tIdx})">X</button>
-                    </div>
-                </div>
-                <div id="segs-${tIdx}" style="display:none;"></div>
-            `;
-            
+            let div = document.createElement('div'); div.className = 'route-block';
+            div.innerHTML = `<div class="route-header" onclick="toggleTour(${tIdx})"><span>Route ${t.id}: ${t.name || ''}</span><button class="btn-danger" style="padding:2px 8px;" onclick="event.stopPropagation(); deleteTour(${tIdx})">X</button></div><div id="segs-${tIdx}" style="display:none;"></div>`;
             t.abschnitte.forEach((abs, aIdx) => {
-                let sRow = document.createElement('div'); 
-                sRow.className = 'segment-row';
+                let sRow = document.createElement('div'); sRow.className = 'segment-row';
                 sRow.innerHTML = `
                     <div class="segment-main" onclick="toggleDetails(${tIdx},${aIdx})">
-                        <div style="display:flex; gap:10px; align-items:center;">
-                            <span class="counter-badge">${abs.bezeichnung}</span>
-                            <span>${abs.stopps.length} Stopps</span>
-                        </div>
-                        <div><button class="btn-primary" onclick="previewRoute(event,${tIdx},${aIdx})">📍 Karte</button></div>
+                        <div style="display:flex; gap:8px; align-items:center;"><span class="counter-badge">${abs.bezeichnung}</span><span style="font-size:0.8rem;">${abs.stopps.length} Stopps 🔽</span></div>
+                        <button class="btn-primary" style="padding:5px 10px;" onclick="previewRoute(event,${tIdx},${aIdx})">📍</button>
                     </div>
                     <div class="segment-details" id="det-${tIdx}-${aIdx}">
-                        ${abs.stopps.map((s, sIdx) => `
-                            <div class="stop-item">
-                                <span>${sIdx+1}. ${s.name}</span>
-                                <button class="btn-danger" style="padding:2px 6px;" onclick="deleteStop(${tIdx},${aIdx},${sIdx})">X</button>
-                            </div>`).join('')}
+                        ${abs.stopps.map((s, sIdx) => `<div class="stop-item"><span>${sIdx+1}. ${s.name}</span><button class="btn-danger" style="padding:1px 5px;" onclick="deleteStop(${tIdx},${aIdx},${sIdx})">X</button></div>`).join('')}
                     </div>`;
                 div.querySelector(`#segs-${tIdx}`).appendChild(sRow);
             });
@@ -236,136 +150,53 @@
         });
     }
 
-    // Diese kleine neue Hilfsfunktion brauchen wir zum Auf/Zuklappen der Hauptroute:
-    function toggleTour(tIdx) {
-        const el = document.getElementById(`segs-${tIdx}`);
-        el.style.display = (el.style.display === 'none') ? 'block' : 'none';
-    }
-
-        function toggleNotes() {
-        const box = document.getElementById('noteBox');
-        box.style.display = (box.style.display === 'none') ? 'block' : 'none';
-    }
-
-        // 1. Speichert den Text bei jeder Eingabe im Browser
-    function saveNotesLocal() {
-        const noteText = document.getElementById('userNotes').value;
-        localStorage.setItem('routeMaster_notes', noteText);
-    }
-
-    // 2. Lädt die Notizen automatisch, sobald die Seite geöffnet wird
-    window.addEventListener('load', () => {
-        const savedNotes = localStorage.getItem('routeMaster_notes');
-        if (savedNotes) {
-            document.getElementById('userNotes').value = savedNotes;
-        }
-    });
-
-
+    function toggleTour(tIdx) { const el = document.getElementById(`segs-${tIdx}`); el.style.display = (el.style.display === 'none') ? 'block' : 'none'; }
     function toggleDetails(t, a) { const d = document.getElementById(`det-${t}-${a}`); d.style.display = d.style.display === 'block' ? 'none' : 'block'; }
+    function toggleNotes() { const box = document.getElementById('noteBox'); box.style.display = (box.style.display === 'none') ? 'block' : 'none'; }
+    function saveNotesLocal() { localStorage.setItem('routeMaster_notes', document.getElementById('userNotes').value); }
+    window.addEventListener('load', () => { if(localStorage.getItem('routeMaster_notes')) document.getElementById('userNotes').value = localStorage.getItem('routeMaster_notes'); });
 
     async function previewRoute(e, tIdx, aIdx) {
-        e.stopPropagation();
-        const abs = projectData.touren[tIdx].abschnitte[aIdx];
-        document.getElementById('modalOverlay').style.display = 'block';
-        document.getElementById('mapModal').style.display = 'block';
-        if (!previewMap) { previewMap = L.map('mapContainer').setView([51.2, 6.7], 13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(previewMap); }
+        e.stopPropagation(); const abs = projectData.touren[tIdx].abschnitte[aIdx];
+        document.getElementById('modalOverlay').style.display = 'block'; document.getElementById('mapModal').style.display = 'block';
+        if (!previewMap) { previewMap = L.map('mapContainer', {zoomControl: false}).setView([51.2, 6.7], 13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(previewMap); }
         previewMap.eachLayer(l => { if(l instanceof L.Polyline || l instanceof L.Marker) previewMap.removeLayer(l); });
         
         const coords = abs.stopps.map(p => `${p.lng},${p.lat}`).join(';');
-        try {
-            const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
-            const d = await r.json();
-            if (d.routes && d.routes[0]) {
-                const line = L.geoJSON(d.routes[0].geometry, {style: {color: 'blue', weight: 5}}).addTo(previewMap);
-                abs.stopps.forEach(p => L.marker([p.lat, p.lng]).addTo(previewMap).bindPopup(p.name));
-                previewMap.fitBounds(line.getBounds());
-            }
-        } catch(err) { alert("Routing fehlgeschlagen. Internet ok?"); }
+        const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+        const d = await r.json();
+        if (d.routes && d.routes[0]) {
+            const line = L.geoJSON(d.routes[0].geometry, {style: {color: 'blue', weight: 5}}).addTo(previewMap);
+            // WEGPUNKTE WIEDER HINZUFÜGEN
+            abs.stopps.forEach(p => L.marker([p.lat, p.lng]).addTo(previewMap));
+            previewMap.fitBounds(line.getBounds());
+        }
+        setTimeout(() => previewMap.invalidateSize(), 200);
     }
 
-        async function prepareAndDownload() {
+    async function prepareAndDownload() {
         const btn = document.getElementById('saveBtn');
-        const msg = document.getElementById('statusMsg');
-
-        // PHASE 1: Berechnen (nur was nötig ist)
         if (btn.style.background !== 'rgb(34, 197, 94)') {
-            btn.innerText = "⏳ PRÜFE & BERECHNE NEUE ROUTEN...";
-            btn.style.background = "#facc15";
-            btn.style.color = "#000";
-
-            try {
-                let neuBerechnet = 0;
-                let uebersprungen = 0;
-
-                for (let t of projectData.touren) {
-                    for (let abs of t.abschnitte) {
-                        // HIER IST DIE BREMSE: 
-                        // Wenn abs.geometry schon existiert, überspringen wir den Server-Aufruf
-                        if (abs.geometry) {
-                            uebersprungen++;
-                            continue; 
-                        }
-
-                        // Nur wenn keine Geometrie da ist (neuer Import), wird berechnet
-                        const c = abs.stopps.map(p => `${p.lng},${p.lat}`).join(';');
-                        const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${c}?overview=full&geometries=geojson`);
-                        const d = await r.json();
-                        if (d.routes && d.routes[0]) {
-                            abs.geometry = d.routes[0].geometry;
-                            neuBerechnet++;
-                        }
-                    }
-                }
-
-                btn.innerText = "✅ FERTIG! KLICKEN ZUM SPEICHERN";
-                btn.style.background = "#22c55e";
-                btn.style.color = "#fff";
-                msg.innerText = `${neuBerechnet} neu berechnet, ${uebersprungen} aus Bestand übernommen.`;
-                
-            } catch (err) {
-                btn.innerText = "❌ FEHLER BEI BERECHNUNG";
-                btn.style.background = "#ef4444";
-                msg.innerText = "Verbindung prüfen!";
+            btn.innerText = "⏳ BERECHNE...";
+            for (let t of projectData.touren) for (let abs of t.abschnitte) {
+                if (abs.geometry) continue; 
+                const c = abs.stopps.map(p => `${p.lng},${p.lat}`).join(';');
+                const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${c}?overview=full&geometries=geojson`);
+                const d = await r.json();
+                if (d.routes && d.routes[0]) abs.geometry = d.routes[0].geometry;
             }
+            btn.innerText = "✅ SPEICHERN"; btn.style.background = "#22c55e";
             return;
         }
-
-        // PHASE 2: Speichern (wie gehabt)
-        const jsonStr = JSON.stringify(projectData, null, 2);
-        if ('showSaveFilePicker' in window) {
-            try {
-                const handle = await window.showSaveFilePicker({
-                    suggestedName: "V14_Master_Export.json",
-                    types: [{ description: 'JSON Datei', accept: {'application/json': ['.json']} }]
-                });
-                const writable = await handle.createWritable();
-                await writable.write(jsonStr);
-                await writable.close();
-                msg.innerText = "Datei erfolgreich gespeichert!";
-                btn.innerText = "💾 MASTER-JSON (OFFLINE) SPEICHERN";
-                btn.style.background = ""; 
-                btn.style.color = "";
-            } catch (err) {
-                msg.innerText = "Speichern abgebrochen.";
-            }
-        } else {
-            const blob = new Blob([jsonStr], { type: "application/json" });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = "V14_Master_Export.json";
-            a.click();
-            msg.innerText = "In Downloads gespeichert.";
-        }
+        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: "application/json" });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "Master_Pro.json"; a.click();
+        btn.innerText = "💾 MASTER-JSON SPEICHERN"; btn.style.background = "";
     }
-
 
     function closeMap() { document.getElementById('modalOverlay').style.display = 'none'; document.getElementById('mapModal').style.display = 'none'; }
     function deleteStop(t, a, s) { projectData.touren[t].abschnitte[a].stopps.splice(s, 1); renderEditor(); }
     function deleteTour(t) { if(confirm("Löschen?")) { projectData.touren.splice(t, 1); renderEditor(); } }
     function safeReset() { if(confirm("Reset?")) { projectData = { touren: [] }; renderEditor(); } }
-
-
 </script>
 </body>
 </html>
