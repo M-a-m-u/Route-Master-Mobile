@@ -3,200 +3,535 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Route-Master Pro</title>
+    <title>Route Check 2026 - Pro Flow V14</title>
+    
+    <link rel="apple-touch-icon" href="IMG/icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon.png">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --primary: #2563eb; --secondary: #64748b; --success: #22c55e; --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --border: #e2e8f0; }
-        body { font-family: -apple-system, system-ui, sans-serif; padding: 15px; background: var(--bg); color: var(--text); margin: 0; padding-top: env(safe-area-inset-top); }
-        .card { background: var(--card); padding: 15px; border-radius: 16px; margin-bottom: 15px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h1 { color: var(--primary); text-align: center; margin-top: 10px; font-size: 1.2rem; }
-        .controls { display: flex; gap: 8px; margin: 10px 0; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
-        button { padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; border: none; white-space: nowrap; font-size: 0.85rem; flex-shrink: 0; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-save { background: var(--success); color: white; width: 100%; padding: 15px; font-size: 1rem; margin-top: 10px; border-radius: 12px; }
-        .btn-danger { background: var(--danger); color: white; }
-        .route-block { border: 1px solid var(--border); border-radius: 14px; margin-top: 15px; background: var(--card); overflow: hidden; }
-        .route-header { background: var(--border); padding: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.85rem; }
-        .segment-row { border-bottom: 1px solid var(--border); }
-        .segment-main { padding: 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-        .segment-details { display: none; background: #f8fafc; padding: 10px; border-top: 1px inset var(--border); }
-        .stop-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e2e8f0; font-size: 0.8rem; }
-        .counter-badge { background: var(--primary); color: white; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; }
-        #mapModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--card); z-index: 10000; }
-        #mapContainer { width: 100%; height: calc(100% - 60px); }
-        .modal-header { padding: 15px; display: flex; justify-content: space-between; background: var(--primary); color: white; align-items: center; padding-top: env(safe-area-inset-top); }
+        :root { 
+            --bg: #020617; --card: #1e293b; --primary: #3b82f6; --text: #f8fafc; --accent: #22c55e; --done: #475569; 
+        }
+        
+        html, body { height: 100%; margin: 0; padding: 0; background: #000; overflow: hidden; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); }
+
+        #coverScreen { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; z-index: 9999; 
+            display: flex; justify-content: center; align-items: center; 
+            cursor: pointer; transition: opacity 1.2s ease-in-out; 
+        }
+        #coverDark, #coverLight { position: absolute; width: 100%; height: 100%; object-fit: cover; transition: opacity 2s ease-in-out; }
+        #startText { 
+            position: absolute; bottom: 25%; color: white; font-weight: 300; 
+            letter-spacing: 3px; z-index: 10001; 
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            transition: opacity 0.4s ease-out;
+        }
+
+        #appContainer { display: none; flex: 1; flex-direction: column; background: var(--bg); opacity: 0; transition: opacity 1.5s ease-in; }
+        
+        .header { 
+            background: var(--card); padding: 10px 15px; 
+            display: grid; 
+            grid-template-columns: 1.1fr 1fr 0.8fr 0.4fr; 
+            align-items: center; 
+            border-bottom: 1px solid #334155; z-index: 5000; 
+        }
+        .header-left { font-size: 0.65rem; color: #94a3b8; font-weight: bold; line-height: 1.1; }
+        .header-center { text-align: center; white-space: nowrap; }
+        #nextDist { font-size: 1.8rem; font-weight: 900; color: var(--accent); }
+        .unit-m { font-size: 0.8rem; color: #94a3b8; margin-left: 2px; font-weight: bold; }
+        .header-next { text-align: center; }
+        #next-num { 
+            font-size: 1.8rem; font-weight: 900; color: #fff; 
+            background: #0f172a; padding: 0 12px; border-radius: 8px; 
+            border: 1px solid var(--primary); display: inline-block; min-width: 45px; 
+            cursor: pointer; 
+        }
+        #next-num:active { background: var(--primary); }
+        .header-right { text-align: right; }
+        .btn-close { color: #ef4444; font-size: 1.8rem; cursor: pointer; font-weight: 900; }
+
+        .controls { background: var(--card); padding: 8px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-bottom: 1px solid #334155; }
+        select { background: #0f172a; color: white; border: 1px solid #334155; padding: 10px; border-radius: 10px; font-size: 0.85rem; outline: none; -webkit-appearance: none; }
+        
+        #map-wrapper { flex: 1; position: relative; overflow: hidden; background: #000; }
+        #map { width: 200%; height: 200%; position: absolute; top: -50%; left: -50%; z-index: 1; transition: transform 0.1s linear; }
+
+        .map-btn { position: absolute; right: 15px; width: 50px; height: 50px; background: rgba(30, 41, 59, 0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2000; border: 1px solid #475569; font-size: 1.2rem; backdrop-filter: blur(5px); }
+        .zoom-btn { left: 15px; font-weight: bold; font-size: 1.5rem; }
+        #btn-zoom-in { top: 15px; }
+        #btn-zoom-out { top: 75px; }
+        #btn-theme { top: 15px; }
+        #btn-nav { top: 75px; color: var(--primary); }
+        #btn-pacman-trigger { position: absolute; right: 15px; top: 135px; width: 50px; height: 50px; background: rgba(30, 41, 59, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2000; cursor: pointer; border: 1px solid rgba(71, 85, 105, 0.2); }
+
+        .bottom-bar { 
+            background: rgba(30, 41, 59, 0.7); padding: 10px 20px; 
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            border-top: 1px solid #334155; z-index: 5000; backdrop-filter: blur(10px);
+        }
+        .prog-bg { width: 100%; background: #020617; height: 8px; border-radius: 4px; border: 1px solid #334155; overflow: hidden; margin-bottom: 8px; }
+        #progBar { width: 0%; height: 100%; background: var(--accent); transition: width 0.5s; }
+        .footer-content { display: flex; justify-content: space-between; align-items: center; color: #94a3b8; font-size: 0.8rem; font-weight: bold; }
+
+        .user-location-icon { width: 22px; height: 22px; background: #3b82f6; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 15px rgba(59, 130, 246, 0.8); }
+        .number-icon { 
+            background: var(--primary); color: white; border-radius: 50%; 
+            text-align: center; line-height: 26px; font-weight: 800; 
+            border: 2px solid white; font-size: 12px; 
+            display: flex; align-items: center; justify-content: center;
+        }
+                /* Der aktive Zielpunkt: Goldgelb und leuchtend */
+        .next-target { 
+            background: #eab308 !important; 
+            border: 3px solid #fff !important;
+            box-shadow: 0 0 20px #eab308;
+            z-index: 9999 !important;
+        }
+
+        .number-icon.done { background: var(--done) !important; opacity: 0.3; border-color: transparent; }
+        .pacman-icon { width: 30px; height: 30px; background: #ffff00; border-radius: 50%; position: relative; transform: rotate(-90deg); }
+        .pacman-mouth { position: absolute; width: 100%; height: 100%; background: #000; clip-path: polygon(100% 50%, 50% 50%, 100% 0, 100% 100%); animation: eat 0.3s infinite alternate; }
+        @keyframes eat { 0% { clip-path: polygon(100% 50%, 50% 50%, 100% 50%, 100% 50%); } 100% { clip-path: polygon(100% 50%, 50% 50%, 100% 0, 100% 100%); } }
+        
+        .pacman-mode #nextDist { color: #ffff00 !important; text-shadow: 0 0 10px #ffff00; }
+        .pacman-mode .number-icon:not(.done) { background: #ff0000 !important; box-shadow: 0 0 15px #ff0000; border: 2px solid #fff !important; }
+
+        .hidden { opacity: 0 !important; pointer-events: none !important; }
+        .ui-element { transition: opacity 0.4s ease; }
+        #btn-ui-toggle { color: #94a3b8; font-size: 0.7rem; cursor: pointer; text-decoration: underline; }
+        #progText { cursor: pointer; padding: 5px; border-radius: 4px; }
+        #progText:active { background: rgba(255,255,255,0.1); color: #fff; }
+
+                /* Der Geheim-Button - jetzt im exakten Design der anderen */
+        #btn-greet-secret { 
+            position: absolute; 
+            left: 15px; 
+            top: 135px; 
+            width: 50px; 
+            height: 50px; 
+            background: rgba(30, 41, 59, 0.8); /* Wie deine anderen Buttons */
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 2000; 
+            border: 1px solid #475569; /* Der graue Rand deiner anderen Buttons */
+            backdrop-filter: blur(5px);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+
     </style>
 </head>
 <body>
 
-<div id="modalOverlay" onclick="closeMap()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999;"></div>
-<div id="mapModal">
-    <div class="modal-header">
-        <span id="modalTitle" style="font-weight:bold;">Vorschau</span>
-        <button onclick="closeMap()" style="background:white; color:black; padding:5px 12px; border-radius:8px;">X</button>
-    </div>
-    <div id="mapContainer"></div>
-</div>
+    <audio id="soundAction" src="IMG/light-on.mp3" preload="auto"></audio>
 
-<div class="container">
-    <h1>🛠 ROUTE-MASTER PRO</h1>
-    <div class="card">
-        <div class="controls">
-            <input type="file" id="fileInput" accept=".json,.itn" style="display:none;" onchange="handleFileSelect()">
-            <button class="btn-primary" onclick="document.getElementById('fileInput').click()">📁 JSON/ITN</button>
-            <button class="btn-primary" style="background:#facc15; color:#000;" onclick="toggleNotes()">📝 Notizen</button>
-            <button class="btn-danger" onclick="safeReset()">🔄 Reset</button>
+    <div id="coverScreen" onclick="lightUpAndStart()">
+        <img id="coverDark" src="IMG/cover01.png">
+        <img id="coverLight" src="IMG/cover02.png" style="opacity:0">
+        <div id="startText">TIPPEN ZUM STARTEN</div>
+    </div>
+
+    <div id="appContainer">
+        <div class="header">
+            <div class="header-left">ZIEL-DISTANZ<br><span id="wakeStatus" style="color:var(--accent); font-size:0.5rem">WAKE-LOCK AKTIV</span></div>
+            <div class="header-center">
+                <span id="nextDist">--</span><span class="unit-m">m</span>
+            </div>
+            <div class="header-next">
+                <div id="next-num" onclick="manualNextWaypoint()">--</div>
+            </div>
+            <div class="header-right">
+                <div class="btn-close" onclick="location.reload()">✕</div>
+            </div>
         </div>
-        <div id="itnSettings" style="display:none; border-top:1px solid var(--border); margin-top:10px; padding-top:10px;">
-            <div class="controls">
-                <select id="importMode" onchange="toggleImportMode()">
-                    <option value="new">➕ Neu</option>
-                    <option value="replace">🔄 Ersetzen</option>
-                </select>
-                <span id="groupNew">
-                    <input type="text" id="routePrefix" placeholder="ID" style="width: 40px; padding:8px;">
-                    <select id="splitCount"><option value="999">Alle</option><option value="25">25</option></select>
-                </span>
-                <span id="groupReplace" style="display:none;"><select id="targetSelect" style="max-width:100px;"></select></span>
-                <button class="btn-primary" style="background:#22c55e;" onclick="processITNData()">OK</button>
+
+        <div class="controls">
+            <select id="tSel" onchange="updateSegments()"></select>
+            <select id="sSel" onchange="syncPreview()"></select>
+        </div>
+
+        <div id="map-wrapper">
+            <div id="map"></div>
+            <div id="btn-zoom-in" class="map-btn ui-element zoom-btn" onclick="map.zoomIn()">+</div>
+            <div id="btn-zoom-out" class="map-btn ui-element zoom-btn" onclick="map.zoomOut()">−</div>
+            <div id="btn-greet-secret" class="map-btn ui-element" style="left: 15px; top: 135px; opacity: 0.1; border: 1px solid transparent;" onclick="greetPassenger()"></div>
+            <div id="btn-theme" class="map-btn ui-element" onclick="toggleTheme()">🌓</div>
+            <div id="btn-nav" class="map-btn ui-element" onclick="navToStart()">📍</div>
+            <div id="btn-pacman-trigger" class="map-btn ui-element" onclick="togglePacman()"></div>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="prog-bg"><div id="progBar"></div></div>
+            <div class="footer-content">
+                <div onclick="document.getElementById('fileInput').click()" style="text-decoration: underline; cursor: pointer;">JSON LADEN</div>
+                <div id="btn-ui-toggle" onclick="toggleUI()">BUTTONS AUS</div>
+                <div id="progText" onclick="manualNextSection()">ABSCHNITT 0 / 0</div>
+                <input type="file" id="fileInput" style="display:none" onchange="loadFile(event)">
             </div>
         </div>
     </div>
 
-    <div id="noteBox" class="card" style="display:none;">
-        <textarea id="userNotes" oninput="saveNotesLocal()" style="width: 100%; height: 100px; padding: 10px; border-radius: 10px; border: 2px solid #facc15; background: #fff; font-family: inherit; box-sizing: border-box;" placeholder="Notizen..."></textarea>
-    </div>
-
-    <div id="editorArea"></div>
-    <button class="btn-save" id="saveBtn" onclick="prepareAndDownload()">💾 MASTER-JSON SPEICHERN</button>
-    <p id="statusMsg" style="text-align:center; font-size: 0.8rem; font-weight:bold; color:var(--primary);"></p>
-</div>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    let projectData = { touren: [] }, previewMap, pendingITN = null;
+    let projectData = null, map, routeLayer, userMarker, tileLayer;
+    let lastPos = null, lastRotation = 0, currentPoints = [], visitedPoints = new Set();
+    let wakeLock = null, isAutoLoading = false, isDarkMode = true, isPacman = false;
+    let lastPointDist = 999999; // Hilfsvariable für Vorbeifahr-Logik
 
-    function handleFileSelect() {
-        const file = document.getElementById('fileInput').files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            if (file.name.endsWith('.json')) { projectData = JSON.parse(e.target.result); renderEditor(); }
-            else { pendingITN = e.target.result; document.getElementById('itnSettings').style.display = 'block'; }
-        };
-        reader.readAsText(file);
+    function lightUpAndStart() {
+        const sound = document.getElementById('soundAction');
+        if (sound) sound.play().catch(() => {});
+        document.getElementById('startText').style.opacity = '0';
+        document.getElementById('coverDark').style.opacity = '0';
+        document.getElementById('coverLight').style.opacity = '1';
+
+        setTimeout(() => {
+            document.getElementById('coverScreen').style.opacity = '0';
+            document.getElementById('appContainer').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('appContainer').style.opacity = '1';
+                document.getElementById('coverScreen').style.display = 'none';
+                initMap();setTimeout(()=>{initAppData();}, 100); requestWakeLock();
+            }, 800);
+        }, 2200); 
     }
 
-    function toggleImportMode() {
-        const mode = document.getElementById('importMode').value;
-        document.getElementById('groupNew').style.display = (mode === 'new') ? 'inline' : 'none';
-        document.getElementById('groupReplace').style.display = (mode === 'replace') ? 'inline' : 'none';
-        if (mode === 'replace') {
-            const sel = document.getElementById('targetSelect');
-            sel.innerHTML = '<option value="">Ziel...</option>';
-            projectData.touren.forEach((t, tIdx) => t.abschnitte.forEach((abs, aIdx) => {
-                const opt = document.createElement('option'); opt.value = tIdx + "|" + aIdx; opt.textContent = abs.bezeichnung; sel.appendChild(opt);
-            }));
-        }
-    }
 
-    function processITNData() {
-        const mode = document.getElementById('importMode').value;
-        const lines = pendingITN.split(/\r?\n/).filter(l => l.includes('|'));
-        const newPts = lines.map(l => { const p = l.split('|'); return { lat: parseFloat(p[1])/100000, lng: parseFloat(p[0])/100000, name: p[2].trim() }; });
-        if (mode === 'replace') {
-            const t = document.getElementById('targetSelect').value.split('|');
-            projectData.touren[t[0]].abschnitte[t[1]].stopps = newPts;
-            projectData.touren[t[0]].abschnitte[t[1]].geometry = null; 
-        } else {
-            const prefix = document.getElementById('routePrefix').value || "00";
-            const split = parseInt(document.getElementById('splitCount').value);
-            let tour = projectData.touren.find(t => t.id === prefix) || { name: "Tour "+prefix, id: prefix, abschnitte: [] };
-            if (!projectData.touren.includes(tour)) projectData.touren.push(tour);
-            for (let i = 0; i < newPts.length; i += split) {
-                let chunk = newPts.slice(i, i + split);
-                if (i > 0) chunk.unshift(newPts[i-1]);
-                tour.abschnitte.push({ bezeichnung: "", stopps: chunk, geometry: null });
-            }
-            reindexSegments(tour);
-        }
-        renderEditor(); document.getElementById('itnSettings').style.display = 'none';
-    }
+        function initMap() {
+        if(map) return;
 
-    function reindexSegments(tour) { tour.abschnitte.forEach((abs, i) => abs.bezeichnung = tour.id + "-" + String(i + 1).padStart(2, '0')); }
+        // 1. Karte initialisieren mit Canvas-Vorteil (preferCanvas)
+        map = L.map('map', { 
+            zoomControl: false, 
+            attributionControl: false,
+            preferCanvas: true // Nutzt die Grafikkarte des iPhones besser aus
+        }).setView([51.2, 6.7], 18);
 
-    function renderEditor() {
-        projectData.touren.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
-        const area = document.getElementById('editorArea'); area.innerHTML = "";
-        projectData.touren.forEach((t, tIdx) => {
-            let div = document.createElement('div'); div.className = 'route-block';
-            div.innerHTML = `<div class="route-header" onclick="toggleTour(${tIdx})"><span>Route ${t.id}: ${t.name || ''}</span><button class="btn-danger" style="padding:2px 8px;" onclick="event.stopPropagation(); deleteTour(${tIdx})">X</button></div><div id="segs-${tIdx}" style="display:none;"></div>`;
-            t.abschnitte.forEach((abs, aIdx) => {
-                let sRow = document.createElement('div'); sRow.className = 'segment-row';
-                sRow.innerHTML = `
-                    <div class="segment-main" onclick="toggleDetails(${tIdx},${aIdx})">
-                        <div style="display:flex; gap:8px; align-items:center;"><span class="counter-badge">${abs.bezeichnung}</span><span style="font-size:0.8rem;">${abs.stopps.length} Stopps 🔽</span></div>
-                        <button class="btn-primary" style="padding:5px 10px;" onclick="previewRoute(event,${tIdx},${aIdx})">📍</button>
-                    </div>
-                    <div class="segment-details" id="det-${tIdx}-${aIdx}">
-                        ${abs.stopps.map((s, sIdx) => `<div class="stop-item"><span>${sIdx+1}. ${s.name}</span><button class="btn-danger" style="padding:1px 5px;" onclick="deleteStop(${tIdx},${aIdx},${sIdx})">X</button></div>`).join('')}
-                    </div>`;
-                div.querySelector(`#segs-${tIdx}`).appendChild(sRow);
+        // 2. TileLayer mit Puffer und schnellem Laden (KeepBuffer & UpdateWhenIdle)
+        tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            keepBuffer: 40,        // Hält mehr Kacheln im Speicher bereit
+            updateWhenIdle: false, // Lädt Kacheln sofort nach, auch während der Bewegung
+            updateWhenZooming: true
+        }).addTo(map);
+
+        routeLayer = L.layerGroup().addTo(map);
+
+        // 3. User-Marker mit hohem Z-Index (bleibt immer oben)
+        userMarker = L.marker([0,0], { 
+            icon: getIcon(), 
+            zIndexOffset: 5000 // Dein Standort steht über allem anderen
+        }).addTo(map);
+
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(updatePos, null, { 
+                enableHighAccuracy: true 
             });
-            area.appendChild(div);
+        }
+    }
+
+
+    function getIcon() {
+        if (isPacman) return L.divIcon({ className: '', html: '<div class="pacman-icon"><div class="pacman-mouth"></div></div>', iconSize:[30,30], iconAnchor:[15,15] });
+        return L.divIcon({ className: 'user-location-icon', iconSize: [22, 22], iconAnchor: [11, 11] });
+    }
+
+    function togglePacman() {
+        isPacman = !isPacman;
+        document.body.classList.toggle('pacman-mode', isPacman);
+        userMarker.setIcon(getIcon());
+        syncRouteLine();
+    }
+
+    function toggleUI() {
+        const elements = document.querySelectorAll('.map-btn');
+        const toggleBtn = document.getElementById('btn-ui-toggle');
+        elements.forEach(el => el.classList.toggle('hidden'));
+        toggleBtn.innerText = elements[0].classList.contains('hidden') ? "BUTTONS AN" : "BUTTONS AUS";
+    }
+
+    // NEU: MANUELLER PUNKT-SKIP
+    function manualNextWaypoint() {
+        let nextIdx = currentPoints.findIndex((_, i) => !visitedPoints.has(i));
+        if (nextIdx !== -1) {
+            visitedPoints.add(nextIdx);
+            syncRouteLine();
+            // Wenn es der letzte Punkt war, automatisch zum nächsten Abschnitt
+            if (nextIdx === currentPoints.length - 1) {
+                manualNextSection();
+            } else {
+                updateUI(lastPos ? L.latLng(lastPos.lat, lastPos.lng) : null);
+            }
+        }
+    }
+
+    // NEU: MANUELLER ABSCHNITT-SKIP
+    function manualNextSection() {
+        const sSel = document.getElementById('sSel');
+        if (sSel.selectedIndex < sSel.options.length - 1) {
+            sSel.selectedIndex += 1;
+            syncPreview();
+        } else {
+            alert("Letzter Abschnitt erreicht!");
+        }
+    }
+
+        function updatePos(pos) {
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        const cur = L.latLng(lat, lng), speed = Math.round((pos.coords.speed || 0) * 3.6);
+        userMarker.setLatLng(cur);
+
+        // Karte zentrieren (etwas nach unten versetzt für bessere Vorausschau)
+        let targetPoint = map.project(cur, map.getZoom());
+        targetPoint.y -= 100; 
+        let targetLatLng = map.unproject(targetPoint, map.getZoom());
+        
+        // Bei hoher Geschwindigkeit Animation aus, um Prozessor zu schonen
+        map.panTo(targetLatLng, { animate: speed < 20, duration: 0.5 });
+
+        let currentHeading = pos.coords.heading;
+        if (currentHeading === null || isNaN(currentHeading)) {
+            if (lastPos && speed > 2) {
+                currentHeading = Math.atan2(lng - lastPos.lng, lat - lastPos.lat) * (180 / Math.PI);
+            }
+        }
+
+        // Karten-Rotation
+        if (currentHeading !== null && speed > 2) {
+            if (Math.abs(currentHeading - lastRotation) > 1) {
+                document.getElementById('map').style.transform = `rotate(${-currentHeading}deg)`;
+                lastRotation = currentHeading;
+                
+                // WICHTIG: Marker-Rotation und Sichtbarkeit erzwingen
+                const icons = document.querySelectorAll('.number-icon');
+                icons.forEach(icon => { 
+                    icon.style.transform = `rotate(${currentHeading}deg)`; 
+                });
+            }
+        }
+
+        lastPos = {lat, lng};
+        
+        // VERFEINERTE LOGIK FÜR DAS ERREICHEN DER PUNKTE
+        let nextIdx = currentPoints.findIndex((_, i) => !visitedPoints.has(i));
+        if (nextIdx !== -1) {
+            const d = cur.distanceTo(L.latLng(currentPoints[nextIdx].lat, currentPoints[nextIdx].lng));
+            
+            // Punkt-Lösch-Logik:
+            // Wir müssen dem Punkt sehr nah kommen (< 15m).
+            // Er wird erst gelöscht, wenn wir den Scheitelpunkt erreicht haben und uns wieder entfernen.
+            if (d < 15) {
+                if (d < lastPointDist) {
+                    lastPointDist = d; // Wir kommen noch näher
+                } else if (d > lastPointDist + 2) { // Wir haben den Punkt passiert (2m Toleranz)
+                    visitedPoints.add(nextIdx);
+                    syncRouteLine(); // Zeichnet die Route neu (nächster Punkt wird jetzt gelb)
+                    lastPointDist = 999999;
+                    if (nextIdx === currentPoints.length - 1) manualNextSection();
+                }
+            } else {
+                lastPointDist = 999999;
+            }
+        }
+        
+        // Sicherheits-Check: Hol das routeLayer (mit den roten Punkten) nach jedem Update nach vorne
+        if(routeLayer) {
+            // In Leaflet gibt es kein direktes bringToFront für LayerGroups, 
+            // aber wir stellen sicher, dass die Marker im DOM oben bleiben.
+            const pane = map.getPane('markerPane');
+            if (pane) pane.style.zIndex = 600;
+        }
+
+        updateUI(cur);
+    }
+
+
+    function updateUI(cur) {
+        if (!currentPoints.length || !cur) return;
+        let nextIdx = currentPoints.findIndex((_, i) => !visitedPoints.has(i));
+        if (nextIdx !== -1) {
+            const d = cur.distanceTo(L.latLng(currentPoints[nextIdx].lat, currentPoints[nextIdx].lng));
+            document.getElementById('nextDist').innerText = Math.round(d);
+            document.getElementById('next-num').innerText = nextIdx + 1;
+        } else {
+            document.getElementById('nextDist').innerText = "✓";
+            document.getElementById('next-num').innerText = "✓";
+        }
+    }
+
+        async function syncRouteLine() {
+        if (!currentPoints.length) return;
+        const tIdx = document.getElementById('tSel').value;
+        const sIdx = document.getElementById('sSel').value;
+        const section = projectData.touren[tIdx].abschnitte[sIdx];
+        
+        routeLayer.clearLayers();
+        const w = isPacman ? 14 : 10;
+        const color = isPacman ? '#2121ff' : '#3b82f6';
+
+        // 1. Die blaue Linie bleibt exakt wie sie war (Geometry oder OSRM)
+        if (section.geometry) {
+            L.geoJSON(section.geometry, { style: { color: color, weight: w, opacity: 0.8, lineJoin: 'round' } }).addTo(routeLayer);
+        } else {
+            const coords = currentPoints.map(p => `${p.lng},${p.lat}`).join(';');
+            try {
+                const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+                const d = await r.json();
+                const fullPath = d.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                L.polyline(fullPath, { color: color, weight: w, opacity: 0.8, lineJoin: 'round' }).addTo(routeLayer);
+            } catch(e) { console.log(e); }
+        }
+
+        // 2. SMART-MARKER LOGIK: Wir begrenzen nur die ANZEIGE der Marker
+        // Wir suchen den nächsten Punkt, den wir noch nicht besucht haben
+        const nextIdx = currentPoints.findIndex((_, idx) => !visitedPoints.has(idx));
+        
+        // Wir zeigen NUR den vorherigen, den aktuellen und den nächsten Marker an (max. 3)
+        const startVisible = Math.max(0, nextIdx - 1);
+        const endVisible = Math.min(currentPoints.length - 1, nextIdx + 1);
+
+        currentPoints.forEach((p, i) => {
+            // Nur zeichnen, wenn der Punkt im Sichtfenster der 3 Marker liegt
+            if (i >= startVisible && i <= endVisible) {
+                const isDone = visitedPoints.has(i);
+                const isNext = (i === nextIdx);
+                
+                // Nächster Punkt ist groß (32), Vorschau/Rückschau normal (26)
+                const s = isNext ? 40 : 30; 
+                
+                const m = L.marker([p.lat, p.lng], { 
+                    icon: L.divIcon({ 
+                        className: `number-icon ${isDone ? 'done' : ''} ${isNext ? 'next-target' : ''}`, 
+                        html: i + 1, 
+                        iconSize: [s, s],
+                        iconAnchor: [s/2, s/2] 
+                    }),
+                    zIndexOffset: isNext ? 3000 : 2000, 
+                    opacity: isDone ? 0.3 : 1.0
+                }).addTo(routeLayer);
+
+                // Rotation beibehalten
+                if (lastRotation !== 0) {
+                    const el = m.getElement();
+                    if (el) el.style.transform += ` rotate(${lastRotation}deg)`;
+                }
+            }
         });
     }
 
-    function toggleTour(tIdx) { const el = document.getElementById(`segs-${tIdx}`); el.style.display = (el.style.display === 'none') ? 'block' : 'none'; }
-    function toggleDetails(t, a) { const d = document.getElementById(`det-${t}-${a}`); d.style.display = d.style.display === 'block' ? 'none' : 'block'; }
-    function toggleNotes() { const box = document.getElementById('noteBox'); box.style.display = (box.style.display === 'none') ? 'block' : 'none'; }
-    function saveNotesLocal() { localStorage.setItem('routeMaster_notes', document.getElementById('userNotes').value); }
-    window.addEventListener('load', () => { if(localStorage.getItem('routeMaster_notes')) document.getElementById('userNotes').value = localStorage.getItem('routeMaster_notes'); });
 
-    async function previewRoute(e, tIdx, aIdx) {
-        e.stopPropagation(); const abs = projectData.touren[tIdx].abschnitte[aIdx];
-        document.getElementById('modalOverlay').style.display = 'block'; document.getElementById('mapModal').style.display = 'block';
-        if (!previewMap) { previewMap = L.map('mapContainer', {zoomControl: false}).setView([51.2, 6.7], 13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(previewMap); }
-        previewMap.eachLayer(l => { if(l instanceof L.Polyline || l instanceof L.Marker) previewMap.removeLayer(l); });
-        
-        const coords = abs.stopps.map(p => `${p.lng},${p.lat}`).join(';');
-        const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
-        const d = await r.json();
-        if (d.routes && d.routes[0]) {
-            const line = L.geoJSON(d.routes[0].geometry, {style: {color: 'blue', weight: 5}}).addTo(previewMap);
-            // WEGPUNKTE WIEDER HINZUFÜGEN
-            abs.stopps.forEach(p => L.marker([p.lat, p.lng]).addTo(previewMap));
-            previewMap.fitBounds(line.getBounds());
-        }
-        setTimeout(() => previewMap.invalidateSize(), 200);
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        tileLayer.setUrl(isDarkMode ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
     }
 
-    async function prepareAndDownload() {
-        const btn = document.getElementById('saveBtn');
-        if (btn.style.background !== 'rgb(34, 197, 94)') {
-            btn.innerText = "⏳ BERECHNE...";
-            for (let t of projectData.touren) for (let abs of t.abschnitte) {
-                if (abs.geometry) continue; 
-                const c = abs.stopps.map(p => `${p.lng},${p.lat}`).join(';');
-                const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${c}?overview=full&geometries=geojson`);
-                const d = await r.json();
-                if (d.routes && d.routes[0]) abs.geometry = d.routes[0].geometry;
+    function navToStart() {
+        if(!currentPoints.length) return;
+        window.open(`comgooglemaps://?daddr=${currentPoints[0].lat},${currentPoints[0].lng}&directionsmode=driving`, '_blank');
+    }
+
+        function loadFile(event) {
+        const reader = new FileReader();
+        reader.onload = (e) => { 
+            projectData = JSON.parse(e.target.result); 
+            // NEU: Hier speichern wir die Daten dauerhaft im Browser
+            localStorage.setItem('active_route_data', JSON.stringify(projectData));
+            fillTours(); 
+        };
+        reader.readAsText(event.target.files[0]);
+    }
+
+        function initAppData() {
+        const saved = localStorage.getItem('active_route_data');
+        if (saved) { 
+            projectData = JSON.parse(saved); 
+            fillTours(); 
+
+            // NEU: Letzten Stand wiederherstellen
+            const lastT = localStorage.getItem('last_tIdx');
+            const lastS = localStorage.getItem('last_sIdx');
+
+            if (lastT !== null && projectData.touren[lastT]) {
+                document.getElementById('tSel').value = lastT;
+                updateSegments(); // Aktualisiert die Abschnitts-Liste
+                
+                if (lastS !== null && projectData.touren[lastT].abschnitte[lastS]) {
+                    document.getElementById('sSel').value = lastS;
+                    syncPreview(); // Lädt die Route auf die Karte
+                }
             }
-            btn.innerText = "✅ SPEICHERN"; btn.style.background = "#22c55e";
-            return;
         }
-        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: "application/json" });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "Master_Pro.json"; a.click();
-        btn.innerText = "💾 MASTER-JSON SPEICHERN"; btn.style.background = "";
     }
 
-    function closeMap() { document.getElementById('modalOverlay').style.display = 'none'; document.getElementById('mapModal').style.display = 'none'; }
-    function deleteStop(t, a, s) { projectData.touren[t].abschnitte[a].stopps.splice(s, 1); renderEditor(); }
-    function deleteTour(t) { if(confirm("Löschen?")) { projectData.touren.splice(t, 1); renderEditor(); } }
-    function safeReset() { if(confirm("Reset?")) { projectData = { touren: [] }; renderEditor(); } }
+
+    function fillTours() {
+        const tSel = document.getElementById('tSel');
+        if (!projectData) return;
+        tSel.innerHTML = projectData.touren.map((t, i) => `<option value="${i}">${t.id} - ${t.name}</option>`).join('');
+        updateSegments();
+    }
+
+    function updateSegments() {
+        const tIdx = document.getElementById('tSel').value;
+        const sSel = document.getElementById('sSel');
+        if (!projectData || !projectData.touren[tIdx]) return;
+        sSel.innerHTML = projectData.touren[tIdx].abschnitte.map((s, i) => `<option value="${i}">${s.bezeichnung}</option>`).join('');
+        
+        // NEU: Merke dir die gewählte Tour
+        localStorage.setItem('last_tIdx', tIdx);
+        
+        syncPreview();
+    }
+
+    function syncPreview() {
+        const tIdx = document.getElementById('tSel').value;
+        const sIdx = document.getElementById('sSel').value;
+        if (!projectData || !projectData.touren[tIdx].abschnitte[sIdx]) return;
+        
+        // NEU: Merke dir den gewählten Abschnitt
+        localStorage.setItem('last_sIdx', sIdx);
+
+        const section = projectData.touren[tIdx].abschnitte[sIdx];
+        currentPoints = section.stopps; 
+        visitedPoints.clear(); 
+        syncRouteLine(); 
+        document.getElementById('progText').innerText = `ABSCHNITT ${parseInt(sIdx)+1} / ${projectData.touren[tIdx].abschnitte.length}`;
+        document.getElementById('progBar').style.width = Math.round(((parseInt(sIdx)+1)/projectData.touren[tIdx].abschnitte.length)*100) + "%";
+    }
+
+    function greetPassenger() {
+    window.speechSynthesis.cancel(); // Stoppt alle alten Versuche
+
+    const text = "Hey Tiill! Super Typ!  Richtig gute Arbeit heute Nacht.";
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Wir setzen die Sprache ganz explizit
+    utterance.lang = 'de-DE'; 
+    utterance.pitch = 1.0;
+    utterance.rate = 0.9; // Etwas langsamer, damit das Echo-Gefühl verschwindet
+
+    // WICHTIG: Wir zwingen das iPhone, die deutsche Stimme zu suchen
+    const voices = window.speechSynthesis.getVoices();
+    const germanVoice = voices.find(v => v.lang === 'de-DE' || v.lang === 'de_DE');
+    if (germanVoice) {
+        utterance.voice = germanVoice;
+    }
+
+    window.speechSynthesis.speak(utterance);
+}
+
+
+    async function requestWakeLock() {
+        try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+    }
 </script>
 </body>
 </html>
